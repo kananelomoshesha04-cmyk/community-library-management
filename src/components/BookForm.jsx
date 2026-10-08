@@ -1,159 +1,202 @@
 import { useEffect, useState } from "react";
 
-const emptyBook = {
-  title: "",
-  author: "",
-  genre: "",
-  isbn: "",
-  quantity: "1",
-};
-
-export default function BookForm({ editingBook, books, onSave, onCancel }) {
-  const [formData, setFormData] = useState(emptyBook);
+function BookForm({
+  books,
+  editingBook,
+  onSaveBook,
+  onCancelEdit,
+}) {
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [genre, setGenre] = useState("");
+  const [isbn, setIsbn] = useState("");
+  const [quantity, setQuantity] = useState("");
   const [error, setError] = useState("");
 
-  // Fill the form when the Update button is selected.
-  useEffect(() => {
-    if (editingBook) {
-      setFormData({
-        title: editingBook.title,
-        author: editingBook.author,
-        genre: editingBook.genre,
-        isbn: editingBook.isbn,
-        quantity: String(editingBook.quantity),
-      });
-    } else {
-      setFormData(emptyBook);
-    }
+  useEffect(
+    function () {
+      if (editingBook) {
+        setTitle(editingBook.title);
+        setAuthor(editingBook.author);
+        setGenre(editingBook.genre);
+        setIsbn(editingBook.isbn);
+        setQuantity(String(editingBook.quantity));
+      } else {
+        clearForm();
+      }
+    },
+    [editingBook]
+  );
 
+  function clearForm() {
+    setTitle("");
+    setAuthor("");
+    setGenre("");
+    setIsbn("");
+    setQuantity("");
     setError("");
-  }, [editingBook]);
-
-  function handleChange(event) {
-    const { name, value } = event.target;
-    setFormData((currentData) => ({ ...currentData, [name]: value }));
   }
 
   function handleSubmit(event) {
     event.preventDefault();
 
-    const cleanedBook = {
-      title: formData.title.trim(),
-      author: formData.author.trim(),
-      genre: formData.genre.trim(),
-      isbn: formData.isbn.trim(),
-      quantity: Number(formData.quantity),
-    };
+    const quantityNumber = Number(quantity);
 
     if (
-      !cleanedBook.title ||
-      !cleanedBook.author ||
-      !cleanedBook.genre ||
-      !cleanedBook.isbn
+      !title.trim() ||
+      !author.trim() ||
+      !genre.trim() ||
+      !isbn.trim()
     ) {
-      setError("Please complete all book fields.");
+      setError("Please complete all the fields.");
       return;
     }
 
-    if (!Number.isInteger(cleanedBook.quantity) || cleanedBook.quantity < 0) {
-      setError("Quantity must be a whole number of zero or more.");
+    if (
+      !Number.isInteger(quantityNumber) ||
+      quantityNumber < 0
+    ) {
+      setError(
+        "Quantity must be zero or a positive whole number."
+      );
       return;
     }
 
-    const duplicateIsbn = books.some(
-      (book) =>
-        book.isbn.toLowerCase() === cleanedBook.isbn.toLowerCase() &&
-        book.id !== editingBook?.id,
-    );
+    const isbnAlreadyExists = books.some(function (book) {
+      const sameIsbn =
+        book.isbn.toLowerCase() === isbn.trim().toLowerCase();
 
-    if (duplicateIsbn) {
+      const differentBook =
+        !editingBook || book.id !== editingBook.id;
+
+      return sameIsbn && differentBook;
+    });
+
+    if (isbnAlreadyExists) {
       setError("A book with this ISBN already exists.");
       return;
     }
 
-    onSave(cleanedBook);
-    setFormData(emptyBook);
-    setError("");
+    const bookDetails = {
+      title: title.trim(),
+      author: author.trim(),
+      genre: genre.trim(),
+      isbn: isbn.trim(),
+      quantity: quantityNumber,
+    };
+
+    if (editingBook) {
+      onSaveBook({
+        ...editingBook,
+        ...bookDetails,
+      });
+    } else {
+      onSaveBook(bookDetails);
+    }
+
+    clearForm();
+  }
+
+  function handleCancel() {
+    clearForm();
+    onCancelEdit();
   }
 
   return (
-    <form className="panel form-panel" onSubmit={handleSubmit} noValidate>
-      <div className="panel-heading">
-        <div>
-          <p className="eyebrow">Book form</p>
-          <h2>{editingBook ? "Update Book" : "Add New Book"}</h2>
+    <section className="card">
+      <h2>
+        {editingBook ? "Update Book" : "Add New Book"}
+      </h2>
+
+      {error && <p className="error-message">{error}</p>}
+
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="book-title">Title</label>
+
+          <input
+            id="book-title"
+            type="text"
+            value={title}
+            onChange={(event) =>
+              setTitle(event.target.value)
+            }
+          />
         </div>
-      </div>
 
-      {error && <p className="form-message error">{error}</p>}
+        <div className="form-group">
+          <label htmlFor="book-author">Author</label>
 
-      <label className="form-group">
-        <span>Title</span>
-        <input
-          name="title"
-          type="text"
-          value={formData.title}
-          onChange={handleChange}
-          placeholder="Enter the book title"
-        />
-      </label>
+          <input
+            id="book-author"
+            type="text"
+            value={author}
+            onChange={(event) =>
+              setAuthor(event.target.value)
+            }
+          />
+        </div>
 
-      <label className="form-group">
-        <span>Author</span>
-        <input
-          name="author"
-          type="text"
-          value={formData.author}
-          onChange={handleChange}
-          placeholder="Enter the author's name"
-        />
-      </label>
+        <div className="form-group">
+          <label htmlFor="book-genre">Genre</label>
 
-      <label className="form-group">
-        <span>Genre</span>
-        <input
-          name="genre"
-          type="text"
-          value={formData.genre}
-          onChange={handleChange}
-          placeholder="For example, Fiction"
-        />
-      </label>
+          <input
+            id="book-genre"
+            type="text"
+            value={genre}
+            onChange={(event) =>
+              setGenre(event.target.value)
+            }
+          />
+        </div>
 
-      <label className="form-group">
-        <span>ISBN</span>
-        <input
-          name="isbn"
-          type="text"
-          value={formData.isbn}
-          onChange={handleChange}
-          placeholder="Enter the ISBN"
-        />
-      </label>
+        <div className="form-group">
+          <label htmlFor="book-isbn">ISBN</label>
 
-      <label className="form-group">
-        <span>Initial Quantity</span>
-        <input
-          name="quantity"
-          type="number"
-          min="0"
-          step="1"
-          value={formData.quantity}
-          onChange={handleChange}
-        />
-      </label>
+          <input
+            id="book-isbn"
+            type="text"
+            value={isbn}
+            onChange={(event) =>
+              setIsbn(event.target.value)
+            }
+          />
+        </div>
 
-      <div className="button-row">
-        <button className="primary-button" type="submit">
-          {editingBook ? "Save Changes" : "Add Book"}
-        </button>
+        <div className="form-group">
+          <label htmlFor="book-quantity">
+            Initial Quantity
+          </label>
 
-        {editingBook && (
-          <button className="secondary-button" type="button" onClick={onCancel}>
-            Cancel
+          <input
+            id="book-quantity"
+            type="number"
+            min="0"
+            value={quantity}
+            onChange={(event) =>
+              setQuantity(event.target.value)
+            }
+          />
+        </div>
+
+        <div className="button-row">
+          <button type="submit" className="primary-button">
+            {editingBook ? "Save Changes" : "Add Book"}
           </button>
-        )}
-      </div>
-    </form>
+
+          {editingBook && (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleCancel}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
+    </section>
   );
 }
+
+export default BookForm;

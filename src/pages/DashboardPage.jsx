@@ -1,49 +1,55 @@
-import StatCard from "../components/StatCard";
+function DashboardPage({ books }) {
+  const totalTitles = books.length;
 
-export default function DashboardPage({ books }) {
-  const totalCopies = books.reduce((total, book) => total + book.quantity, 0);
-  const availableTitles = books.filter((book) => book.quantity > 0).length;
-  const lowStockBooks = books.filter((book) => book.quantity < 2).length;
+  const totalCopies = books.reduce(function (total, book) {
+    return total + book.quantity;
+  }, 0);
 
-  function getStatus(book) {
-    if (book.quantity === 0) {
-      return { text: "Out of Stock", className: "out" };
+  const lowStockBooks = books.filter(function (book) {
+    return book.quantity < 2;
+  }).length;
+
+  function getStatus(quantity) {
+    if (quantity === 0) {
+      return "Out of stock";
     }
 
-    if (book.quantity < 2) {
-      return { text: "Low Stock", className: "low" };
+    if (quantity < 2) {
+      return "Low stock";
     }
 
-    return { text: "Available", className: "available" };
+    return "Available";
   }
 
   return (
     <div>
-      <section className="page-intro">
-        <div>
-          <p className="eyebrow">Library overview</p>
-          <h2>Dashboard</h2>
-          <p>View the current availability of all registered books.</p>
-        </div>
-      </section>
+      <h1>Dashboard</h1>
+      <p>
+        Overview the current availability of library books.
+      </p>
 
-      <section className="stats-grid" aria-label="Library statistics">
-        <StatCard label="Book Titles" value={books.length} />
-        <StatCard label="Total Copies" value={totalCopies} tone="green" />
-        <StatCard label="Available Titles" value={availableTitles} tone="purple" />
-        <StatCard label="Low Stock" value={lowStockBooks} tone="orange" />
-      </section>
+      <div className="statistics">
+        <section className="stat-card">
+          <h2>{totalTitles}</h2>
+          <p>Book Titles</p>
+        </section>
 
-      <section className="panel table-panel">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">Live stock levels</p>
-            <h2>Current Book Availability</h2>
-          </div>
-        </div>
+        <section className="stat-card">
+          <h2>{totalCopies}</h2>
+          <p>Total Copies</p>
+        </section>
+
+        <section className="stat-card">
+          <h2>{lowStockBooks}</h2>
+          <p>Low Stock Books</p>
+        </section>
+      </div>
+
+      <section className="card">
+        <h2>Current Book Availability</h2>
 
         {books.length === 0 ? (
-          <p className="empty-state">No books are currently registered.</p>
+          <p>No books have been registered.</p>
         ) : (
           <div className="table-wrapper">
             <table>
@@ -57,25 +63,24 @@ export default function DashboardPage({ books }) {
                   <th>Status</th>
                 </tr>
               </thead>
-              <tbody>
-                {books.map((book) => {
-                  const status = getStatus(book);
 
+              <tbody>
+                {books.map(function (book) {
                   return (
                     <tr
                       key={book.id}
-                      className={book.quantity < 2 ? "low-stock-row" : ""}
+                      className={
+                        book.quantity < 2
+                          ? "low-stock"
+                          : ""
+                      }
                     >
                       <td>{book.title}</td>
                       <td>{book.author}</td>
                       <td>{book.genre}</td>
                       <td>{book.isbn}</td>
                       <td>{book.quantity}</td>
-                      <td>
-                        <span className={`status-label ${status.className}`}>
-                          {status.text}
-                        </span>
-                      </td>
+                      <td>{getStatus(book.quantity)}</td>
                     </tr>
                   );
                 })}
@@ -87,3 +92,5 @@ export default function DashboardPage({ books }) {
     </div>
   );
 }
+
+export default DashboardPage;

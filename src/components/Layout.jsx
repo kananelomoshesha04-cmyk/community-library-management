@@ -1,46 +1,52 @@
 import { NavLink, Outlet } from "react-router-dom";
 
-export default function Layout({ loggedInUser, onLogout }) {
-  function navClass({ isActive }) {
+function Layout({ currentUser, onLogout }) {
+  function getLinkClass({ isActive }) {
     return isActive ? "nav-link active" : "nav-link";
   }
 
   return (
-    <div className="app-shell">
-      <header className="site-header">
-        <div>
-          <p className="eyebrow">Community services</p>
-          <h1>Community Library</h1>
-        </div>
+    <div>
+      <header className="top-bar">
+        <nav className="navigation">
+          <NavLink to="/" end className={getLinkClass}>
+            Dashboard
+          </NavLink>
 
-        {loggedInUser && (
-          <div className="session-area">
-            <span>{loggedInUser.role}</span>
-            <button className="danger-button" type="button" onClick={onLogout}>
-              Logout
-            </button>
-          </div>
-        )}
+          <NavLink to="/books" className={getLinkClass}>
+            Books
+          </NavLink>
+
+          <NavLink
+            to="/transactions"
+            className={getLinkClass}
+          >
+            Transactions
+          </NavLink>
+
+          <NavLink to="/users" className={getLinkClass}>
+            Users
+          </NavLink>
+        </nav>
+
+        <div className="user-session">
+          <strong>{currentUser.role}</strong>
+
+          <button
+            type="button"
+            className="danger-button"
+            onClick={onLogout}
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
-      <nav className="navigation" aria-label="Main navigation">
-        <NavLink className={navClass} to="/" end>
-          Dashboard
-        </NavLink>
-        <NavLink className={navClass} to="/books">
-          Books
-        </NavLink>
-        <NavLink className={navClass} to="/transactions">
-          Transactions
-        </NavLink>
-        <NavLink className={navClass} to="/users">
-          Users
-        </NavLink>
-      </nav>
-
-      <main className="main-content">
+      <main className="page-container">
         <Outlet />
       </main>
     </div>
   );
 }
+
+export default Layout;

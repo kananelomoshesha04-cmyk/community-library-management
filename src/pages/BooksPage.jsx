@@ -1,8 +1,8 @@
 import { useState } from "react";
 import BookForm from "../components/BookForm";
-import BookTable from "../components/BookTable";
+import BookList from "../components/BookList";
 
-export default function BooksPage({
+function BooksPage({
   books,
   onAddBook,
   onUpdateBook,
@@ -10,58 +10,44 @@ export default function BooksPage({
 }) {
   const [editingBook, setEditingBook] = useState(null);
 
-  function handleSave(bookData) {
+  function handleSaveBook(bookDetails) {
     if (editingBook) {
-      onUpdateBook(editingBook.id, bookData);
+      onUpdateBook(bookDetails);
       setEditingBook(null);
     } else {
-      onAddBook(bookData);
+      onAddBook(bookDetails);
     }
   }
 
-  function handleDelete(bookId) {
-    const selectedBook = books.find((book) => book.id === bookId);
+  function handleDeleteBook(bookId) {
+    onDeleteBook(bookId);
 
-    if (!selectedBook) {
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${selectedBook.title}"?`,
-    );
-
-    if (confirmed) {
-      onDeleteBook(bookId);
-
-      if (editingBook?.id === bookId) {
-        setEditingBook(null);
-      }
+    if (editingBook && editingBook.id === bookId) {
+      setEditingBook(null);
     }
   }
 
   return (
     <div>
-      <section className="page-intro">
-        <div>
-          <p className="eyebrow">Catalogue administration</p>
-          <h2>Book Management</h2>
-          <p>Add, update and remove books registered in the library.</p>
-        </div>
-      </section>
+      <h1>Book Management</h1>
+      <p>Add, update and delete library books.</p>
 
-      <div className="management-grid">
+      <div className="two-column-layout">
         <BookForm
+          books={books}
           editingBook={editingBook}
-          books={books}
-          onSave={handleSave}
-          onCancel={() => setEditingBook(null)}
+          onSaveBook={handleSaveBook}
+          onCancelEdit={() => setEditingBook(null)}
         />
-        <BookTable
+
+        <BookList
           books={books}
-          onEdit={setEditingBook}
-          onDelete={handleDelete}
+          onEditBook={setEditingBook}
+          onDeleteBook={handleDeleteBook}
         />
       </div>
     </div>
   );
 }
+
+export default BooksPage;

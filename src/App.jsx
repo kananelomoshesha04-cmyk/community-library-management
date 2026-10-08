@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+
 import Layout from "./components/Layout";
-import useLocalStorage from "./hooks/useLocalStorage";
+import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import BooksPage from "./pages/BooksPage";
 import TransactionsPage from "./pages/TransactionsPage";
@@ -9,146 +10,288 @@ import UsersPage from "./pages/UsersPage";
 
 const defaultUsers = [
   {
-    id: "default-admin",
+    id: "admin-1",
     name: "Library Administrator",
-    membershipId: "ADMIN001",
+    membershipId: "mosh1234",
     role: "Admin",
   },
 ];
 
-function createId() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+function readLocalStorage(key, defaultValue) {
+  try {
+    const savedData = localStorage.getItem(key);
+
+    if (savedData) {
+      return JSON.parse(savedData);
+    }
+
+    return defaultValue;
+  } catch {
+    return defaultValue;
+  }
 }
 
-export default function App() {
-  const [books, setBooks] = useLocalStorage("reactLibraryBooks", []);
-  const [transactions, setTransactions] = useLocalStorage(
-    "reactLibraryTransactions",
-    [],
+function createId() {
+  return `${Date.now()}-${Math.random()}`;
+}
+
+function App() {
+  const [books, setBooks] = useState(function () {
+    return readLocalStorage("libraryBooks", []);
+  });
+
+  const [transactions, setTransactions] = useState(function () {
+    return readLocalStorage("libraryTransactions", []);
+  });
+
+  const [users, setUsers] = useState(function () {
+    return readLocalStorage("libraryUsers", defaultUsers);
+  });
+
+  const [currentUser, setCurrentUser] = useState(function () {
+    return readLocalStorage("libraryCurrentUser", null);
+  });
+
+  // Save books whenever the books array changes.
+  useEffect(
+    function () {
+      localStorage.setItem("libraryBooks", JSON.stringify(books));
+    },
+    [books]
   );
-  const [users, setUsers] = useLocalStorage(
-    "reactLibraryUsers",
-    defaultUsers,
+
+  // Save transactions whenever the transaction array changes.
+  useEffect(
+    function () {
+      localStorage.setItem(
+        "libraryTransactions",
+        JSON.stringify(transactions)
+      );
+    },
+    [transactions]
   );
-  const [loggedInUserId, setLoggedInUserId] = useState(null);
 
-  const loggedInUser = useMemo(
-    () => users.find((user) => user.id === loggedInUserId) ?? null,
-    [loggedInUserId, users],
+  // Save users whenever the users array changes.
+  useEffect(
+    function () {
+      localStorage.setItem("libraryUsers", JSON.stringify(users));
+    },
+    [users]
   );
 
-  // This effect logs out a user if that account no longer exists.
-  useEffect(() => {
-    if (loggedInUserId !== null && loggedInUser === null) {
-      setLoggedInUserId(null);
-    }
-  }, [loggedInUser, loggedInUserId]);
-
-  function addBook(bookData) {
-    setBooks((currentBooks) => [
-      ...currentBooks,
-      { id: createId(), ...bookData },
-    ]);
-  }
-
-  function updateBook(bookId, bookData) {
-    setBooks((currentBooks) =>
-      currentBooks.map((book) =>
-        book.id === bookId ? { ...book, ...bookData } : book,
-      ),
-    );
-  }
-
-  function deleteBook(bookId) {
-    setBooks((currentBooks) =>
-      currentBooks.filter((book) => book.id !== bookId),
-    );
-  }
-
-  function recordTransaction(bookId, type, quantity) {
-    const selectedBook = books.find((book) => book.id === bookId);
-
-    if (!selectedBook) {
-      return { success: false, message: "Please select a valid book." };
-    }
-
-    if (type === "deduct" && quantity > selectedBook.quantity) {
-      return {
-        success: false,
-        message: `Only ${selectedBook.quantity} copies are available.`,
-      };
-    }
-
-    const quantityChange = type === "add" ? quantity : -quantity;
-
-    setBooks((currentBooks) =>
-      currentBooks.map((book) =>
-        book.id === bookId
-          ? { ...book, quantity: book.quantity + quantityChange }
-          : book,
-      ),
-    );
-
-    setTransactions((currentTransactions) => [
-      {
-        id: createId(),
-        bookId,
-        bookTitle: selectedBook.title,
-        type,
-        quantity,
-        date: new Date().toISOString(),
-      },
-      ...currentTransactions,
-    ]);
-
-    return { success: true, message: "Transaction recorded successfully." };
-  }
+  // Save or remove the logged-in user.
+  useEffect(
+    function () {
+      if (currentUser) {
+        localStorage.setItem(
+          "libraryCurrentUser",
+          JSON.stringify(currentUser)
+        );
+      } else {
+        localStorage.removeItem("libraryCurrentUser");
+      }
+    },
+    [currentUser]
+  );
 
   function login(membershipId) {
-    const normalizedId = membershipId.trim().toUpperCase();
-    const matchingUser = users.find(
-      (user) => user.membershipId.toUpperCase() === normalizedId,
-    );
+    const enteredId = membershipId.trim().toLowerCase();
 
-    if (!matchingUser) {
-      return { success: false, message: "Membership ID was not found." };
+    const foundUser = users.find(function (user) {
+      return user.membershipId.toLowerCase() === enteredId;
+    });
+
+    if (!foundUser) {
+      return false;
     }
 
-    setLoggedInUserId(matchingUser.id);
-    return { success: true, message: "Login successful." };
+    setCurrentUser(foundUser);
+    return true;
   }
 
   function logout() {
-    setLoggedInUserId(null);
+    setCurrentUser(null);
   }
 
-  function addUser(userData) {
-    setUsers((currentUsers) => [
-      ...currentUsers,
-      { id: createId(), ...userData },
-    ]);
+  function addBook(bookDetails) {
+    const newBook = {
+      id: createId(),
+      ...bookDetails,
+      quantity: Number(bookDetails.quantity),
+    };
+
+    setBooks(function (currentBooks) {
+      return [...currentBooks, newBook];
+    });
   }
 
-  function updateUser(userId, userData) {
-    setUsers((currentUsers) =>
-      currentUsers.map((user) =>
-        user.id === userId ? { ...user, ...userData } : user,
-      ),
-    );
+  function updateBook(updatedBook) {
+    setBooks(function (currentBooks) {
+      return currentBooks.map(function (book) {
+        if (book.id === updatedBook.id) {
+          return {
+            ...updatedBook,
+            quantity: Number(updatedBook.quantity),
+          };
+        }
+
+        return book;
+      });
+    });
+  }
+
+  function deleteBook(bookId) {
+    setBooks(function (currentBooks) {
+      return currentBooks.filter(function (book) {
+        return book.id !== bookId;
+      });
+    });
+  }
+
+  function recordTransaction(bookId, transactionType, quantity) {
+    const selectedBook = books.find(function (book) {
+      return book.id === bookId;
+    });
+
+    if (!selectedBook) {
+      return {
+        success: false,
+        message: "Please select a book.",
+      };
+    }
+
+    const quantityNumber = Number(quantity);
+
+    if (!Number.isInteger(quantityNumber) || quantityNumber <= 0) {
+      return {
+        success: false,
+        message: "Quantity must be a positive whole number.",
+      };
+    }
+
+    if (
+      transactionType === "deduct" &&
+      quantityNumber > selectedBook.quantity
+    ) {
+      return {
+        success: false,
+        message: "There are not enough copies available.",
+      };
+    }
+
+    const newQuantity =
+      transactionType === "add"
+        ? selectedBook.quantity + quantityNumber
+        : selectedBook.quantity - quantityNumber;
+
+    setBooks(function (currentBooks) {
+      return currentBooks.map(function (book) {
+        if (book.id === bookId) {
+          return {
+            ...book,
+            quantity: newQuantity,
+          };
+        }
+
+        return book;
+      });
+    });
+
+    const newTransaction = {
+      id: createId(),
+      date: new Date().toLocaleString(),
+      bookTitle: selectedBook.title,
+      type:
+        transactionType === "add"
+          ? "Stock Added"
+          : "Book Borrowed",
+      quantity: quantityNumber,
+    };
+
+    setTransactions(function (currentTransactions) {
+      return [newTransaction, ...currentTransactions];
+    });
+
+    return {
+      success: true,
+      message: "Transaction recorded successfully.",
+    };
+  }
+
+  function addUser(userDetails) {
+    const newUser = {
+      id: createId(),
+      ...userDetails,
+    };
+
+    setUsers(function (currentUsers) {
+      return [...currentUsers, newUser];
+    });
+  }
+
+  function updateUser(updatedUser) {
+    setUsers(function (currentUsers) {
+      return currentUsers.map(function (user) {
+        if (user.id === updatedUser.id) {
+          return updatedUser;
+        }
+
+        return user;
+      });
+    });
+
+    // Update the session if the administrator updates their own details.
+    if (currentUser && currentUser.id === updatedUser.id) {
+      setCurrentUser(updatedUser);
+    }
   }
 
   function deleteUser(userId) {
-    setUsers((currentUsers) =>
-      currentUsers.filter((user) => user.id !== userId),
-    );
+    // Do not allow a logged-in user to delete their own account.
+    if (currentUser && currentUser.id === userId) {
+      return false;
+    }
+
+    setUsers(function (currentUsers) {
+      return currentUsers.filter(function (user) {
+        return user.id !== userId;
+      });
+    });
+
+    return true;
   }
 
   return (
     <Routes>
       <Route
-        element={<Layout loggedInUser={loggedInUser} onLogout={logout} />}
+        path="/login"
+        element={
+          currentUser ? (
+            <Navigate to="/" replace />
+          ) : (
+            <LoginPage onLogin={login} />
+          )
+        }
+      />
+
+      <Route
+        path="/"
+        element={
+          currentUser ? (
+            <Layout
+              currentUser={currentUser}
+              onLogout={logout}
+            />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
       >
-        <Route index element={<DashboardPage books={books} />} />
+        <Route
+          index
+          element={<DashboardPage books={books} />}
+        />
+
         <Route
           path="books"
           element={
@@ -160,6 +303,7 @@ export default function App() {
             />
           }
         />
+
         <Route
           path="transactions"
           element={
@@ -170,22 +314,32 @@ export default function App() {
             />
           }
         />
+
         <Route
           path="users"
           element={
             <UsersPage
               users={users}
-              loggedInUser={loggedInUser}
-              onLogin={login}
-              onLogout={logout}
+              currentUser={currentUser}
               onAddUser={addUser}
               onUpdateUser={updateUser}
               onDeleteUser={deleteUser}
             />
           }
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
+
+      <Route
+        path="*"
+        element={
+          <Navigate
+            to={currentUser ? "/" : "/login"}
+            replace
+          />
+        }
+      />
     </Routes>
   );
 }
+
+export default App;

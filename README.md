@@ -1,74 +1,39 @@
 # Community Library Management System
 
-This is a beginner-friendly React application for the BIWA2110 Individual Assignment 2.
+A web-based library management system created using React.
 
-## Assignment features
+## Features
 
-- Dashboard with current book availability and low-stock highlighting.
-- Add, update and delete books.
-- Add stock and deduct borrowed books.
-- Transaction history.
-- User login.
-- Administrator forms for adding, updating and deleting users.
-- React Router navigation.
-- Controlled React forms with validation.
-- React hooks including `useState`, `useEffect` and a custom `useLocalStorage` hook.
-- Local Storage persistence.
-- Responsive CSS for desktop, tablet and phone screens.
+- User login
+- Dashboard showing book availability
+- Add, update and delete books
+- Add and deduct book stock
+- Transaction history
+- Add, update and delete users
+- Data saved using Local Storage
+- Navigation using React Router
 
-## Default administrator
+## Technologies Used
 
-Use this membership ID on the Users page:
+- React
+- JSX
+- CSS
+- React Router
+- Local Storage
+- Vite
 
-```text
-ADMIN001
-```
+## How to Run the Project
 
-## Run the project on Windows
+1. Install the dependencies:
 
-Open PowerShell inside this project folder and run:
+   npm install
 
-```powershell
-npm.cmd install
-npm.cmd run dev
-```
+2. Start the development server:
 
-Open the local address displayed by Vite, usually:
+   npm run dev
 
-```text
-http://localhost:5173/
-```
+3. Open the displayed localhost link.
 
-Keep PowerShell open while using the application.
+## Administrator Login
 
-## Project structure
-
-```text
-src/
-  components/       Reusable forms, tables, layout and cards
-  hooks/            Local Storage custom hook
-  pages/            Dashboard, Books, Transactions and Users pages
-  App.jsx           Application data and routes
-  main.jsx          React entry point
-  styles.css        Responsive application styling
-```
-
-## Important files to explain during marking
-
-- `src/hooks/useLocalStorage.js`: uses `useState` and `useEffect` to save data.
-- `src/App.jsx`: contains the main application state and functions.
-- `src/components/BookForm.jsx`: demonstrates a controlled form and validation.
-- `src/components/UserForm.jsx`: demonstrates reusable controlled inputs.
-- `src/pages/DashboardPage.jsx`: displays availability and highlights low stock.
-- `src/main.jsx`: starts React and enables React Router.
-
-## Before submitting
-
-1. Test adding, updating and deleting a book.
-2. Test adding and borrowing stock.
-3. Confirm the transaction history appears.
-4. Log in with `ADMIN001`.
-5. Test adding, updating and deleting another user.
-6. Refresh the browser and confirm that data remains saved.
-7. Personalize the title, colors or sample data so you can confidently explain your work.
-8. Upload the complete project to GitHub, but do not upload the `node_modules` folder.
+Membership ID: mosh1234

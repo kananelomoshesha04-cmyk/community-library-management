@@ -1,76 +1,57 @@
 import { useState } from "react";
-import LoginForm from "../components/LoginForm";
 import UserForm from "../components/UserForm";
-import UserTable from "../components/UserTable";
 
-export default function UsersPage({
+function UsersPage({
   users,
-  loggedInUser,
-  onLogin,
-  onLogout,
+  currentUser,
   onAddUser,
   onUpdateUser,
   onDeleteUser,
 }) {
   const [editingUser, setEditingUser] = useState(null);
 
-  if (!loggedInUser) {
+  if (currentUser.role !== "Admin") {
     return (
       <div>
-        <section className="page-intro">
-          <div>
-            <p className="eyebrow">Account access</p>
-            <h2>User Management</h2>
-            <p>Log in to access your library account.</p>
-          </div>
-        </section>
+        <h1>User Management</h1>
 
-        <LoginForm onLogin={onLogin} />
+        <section className="card access-message">
+          <h2>Administrator access required</h2>
+
+          <p>
+            Only an administrator can add, update or delete
+            users.
+          </p>
+        </section>
       </div>
     );
   }
 
-  function handleSave(userData) {
+  function handleSaveUser(userDetails) {
     if (editingUser) {
-      if (editingUser.id === loggedInUser.id && userData.role !== "Admin") {
-        window.alert("You cannot remove your own administrator role.");
-        return;
-      }
-
-      onUpdateUser(editingUser.id, userData);
+      onUpdateUser(userDetails);
       setEditingUser(null);
     } else {
-      onAddUser(userData);
+      onAddUser(userDetails);
     }
   }
 
-  function handleDelete(userId) {
-    const selectedUser = users.find((user) => user.id === userId);
-
-    if (!selectedUser) {
-      return;
-    }
-
-    if (selectedUser.id === loggedInUser.id) {
-      window.alert("You cannot delete the account that is currently logged in.");
-      return;
-    }
-
-    const administrators = users.filter((user) => user.role === "Admin");
-
-    if (selectedUser.role === "Admin" && administrators.length === 1) {
-      window.alert("The system must have at least one administrator.");
+  function handleDeleteUser(user) {
+    if (user.id === currentUser.id) {
+      window.alert(
+        "You cannot delete the account you are currently using."
+      );
       return;
     }
 
     const confirmed = window.confirm(
-      `Are you sure you want to delete ${selectedUser.name}?`,
+      `Do you want to delete ${user.name}?`
     );
 
     if (confirmed) {
-      onDeleteUser(userId);
+      onDeleteUser(user.id);
 
-      if (editingUser?.id === userId) {
+      if (editingUser && editingUser.id === user.id) {
         setEditingUser(null);
       }
     }
@@ -78,42 +59,74 @@ export default function UsersPage({
 
   return (
     <div>
-      <section className="page-intro session-intro">
-        <div>
-          <p className="eyebrow">Account access</p>
-          <h2>User Management</h2>
-          <p>
-            Logged in as <strong>{loggedInUser.name}</strong> ({loggedInUser.role}).
-          </p>
-        </div>
-        <button className="secondary-button" type="button" onClick={onLogout}>
-          Logout
-        </button>
-      </section>
+      <h1>User Management</h1>
 
-      {loggedInUser.role === "Admin" ? (
-        <div className="management-grid">
-          <UserForm
-            editingUser={editingUser}
-            users={users}
-            onSave={handleSave}
-            onCancel={() => setEditingUser(null)}
-          />
-          <UserTable
-            users={users}
-            onEdit={setEditingUser}
-            onDelete={handleDelete}
-          />
-        </div>
-      ) : (
-        <section className="panel permission-panel">
-          <h2>Account Access</h2>
-          <p>
-            You are logged in successfully. Only administrators can add, update
-            or delete user accounts.
-          </p>
+      <p>Add, update and delete library users.</p>
+
+      <div className="two-column-layout">
+        <UserForm
+          users={users}
+          editingUser={editingUser}
+          onSaveUser={handleSaveUser}
+          onCancelEdit={() => setEditingUser(null)}
+        />
+
+        <section className="card">
+          <h2>Registered Users</h2>
+
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Membership ID</th>
+                  <th>Role</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {users.map(function (user) {
+                  return (
+                    <tr key={user.id}>
+                      <td>{user.name}</td>
+                      <td>{user.membershipId}</td>
+                      <td>{user.role}</td>
+
+                      <td>
+                        <div className="button-row">
+                          <button
+                            type="button"
+                            className="warning-button"
+                            onClick={() =>
+                              setEditingUser(user)
+                            }
+                          >
+                            Update
+                          </button>
+
+                          <button
+                            type="button"
+                            className="danger-button"
+                            disabled={user.id === currentUser.id}
+                            onClick={() =>
+                              handleDeleteUser(user)
+                            }
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </section>
-      )}
+      </div>
     </div>
   );
 }
+
+export default UsersPage;
